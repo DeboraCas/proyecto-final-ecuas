@@ -1,9 +1,8 @@
 import numpy as np
 
 
-# 1. ED de primer orden: calentamiento de un motor
-#    100 T' + 2 (T - 25) = 20,   T(0) = 25,   0 <= t <= 200 s
-#    Solución: T(t) = 35 - 10 e^{-t/50}
+# ED de primer orden: calentamiento de un motor
+# 100 T' + 2 (T - 25) = 20,   T(0) = 25,   0 <= t <= 200 s    Solución: T(t) = 35 - 10 e^{-t/50}
 def _f_motor(t, y):
     T = y[0]
     return np.array([(20.0 - 2.0 * (T - 25.0)) / 100.0])
@@ -25,9 +24,8 @@ MOTOR = dict(
 )
 
 
-# 2. ED de segundo orden: elevador
-#    m x'' + c x' = F_m - m g,   x(0) = 0,  x'(0) = 0,   0 <= t <= 10 s
-#    Solución: v(t) = 5 (1 - e^{-t/5}),   x(t) = 5 t + 25 e^{-t/5} - 25
+# ED de segundo orden: elevador
+#    m x'' + c x' = F_m - m g,   x(0) = 0,  x'(0) = 0,   0 <= t <= 10 s    Solución: v(t) = 5 (1 - e^{-t/5}),   x(t) = 5 t + 25 e^{-t/5} - 25
 M_ELEV, C_ELEV, FM_ELEV, G = 500.0, 100.0, 5405.0, 9.81
 
 
@@ -54,7 +52,7 @@ ELEVADOR = dict(
 )
 
 
-# 3. Sistema lineal 2x2: motor DC
+# Sistema lineal 2x2: motor DC
 #    i' = 24 - 2 i - 0.02 w,    w' = i - 10 w,    i(0) = w(0) = 0,
 #    0 <= t <= 10 s.
 #    Solución (por eliminación):  w'' + 12 w' + 20.02 w = 24
@@ -89,7 +87,7 @@ MOTOR_DC = dict(
 )
 
 
-# 4. Sistema NO lineal 2x2: Lotka-Volterra (sin solución analítica)
+# Sistema NO lineal 2x2: Lotka-Volterra (sin solución analítica)
 #    x' = a x - b x y,    y' = d x y - c y,    x(0) = 10,  y(0) = 5
 #    Cantidad conservada:  H(x, y) = d x - c ln x + b y - a ln y
 
