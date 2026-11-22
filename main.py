@@ -1,8 +1,17 @@
+"""
+Pruebas de Heun y RK3 para el proyecto final.
+
+Resuelve los cuatro problemas con los dos métodos, calcula los errores y
+guarda las figuras en figs/ y las tablas en tablas/.
+
+"""
+
 import os
 
 import matplotlib
-matplotlib.use("Agg")                   
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.ticker import NullFormatter
 import numpy as np
 
 import ecuaciones as eq
@@ -11,13 +20,13 @@ from metodos import heun, rk3
 METODOS = {"Heun": heun, "RK3": rk3}
 COLORES = {"Heun": "tab:orange", "RK3": "tab:green"}
 
+# así figs/ y tablas/ quedan junto a este archivo, se corra desde donde se corra
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs("figs", exist_ok=True)
 os.makedirs("tablas", exist_ok=True)
 
 
 def fmt_tex(x):
-    """Formatea un número en notación científica para LaTeX."""
     if x == 0:
         return "0"
     mantisa, exp = f"{x:.2e}".split("e")
@@ -25,24 +34,21 @@ def fmt_tex(x):
 
 
 def orden_observado(hs, errores):
-    """Pendiente de log(error) vs log(h): orden de convergencia observado."""
     return np.polyfit(np.log(hs), np.log(errores), 1)[0]
 
 
 def resolver(problema, metodo, h):
-    """Resuelve el PVI de `problema` con `metodo` y paso h."""
     return METODOS[metodo](problema["f"], problema["t0"], problema["tf"],
                            problema["y0"], h)
 
 
 def error_max(problema, metodo, h):
-    """Error absoluto máximo respecto de la solución analítica."""
+    """Mayor diferencia absoluta entre la solución numérica y la exacta."""
     t, y = resolver(problema, metodo, h)
     return np.max(np.abs(y - problema["exacta"](t)))
 
 
 def escribir_tabla(nombre, titulo, etiqueta, hs, errs, ordenes):
-    """Guarda una tabla de errores en tablas/<nombre>.tex (booktabs)."""
     filas = "\n".join(
         f"{h:g} & {fmt_tex(errs['Heun'][k])} & {fmt_tex(errs['RK3'][k])} \\\\"
         for k, h in enumerate(hs)
@@ -60,14 +66,8 @@ def escribir_tabla(nombre, titulo, etiqueta, hs, errs, ordenes):
         fh.write(texto)
 
 
-# Verificación de las soluciones analíticas
-
 def verificar_analiticas():
-    """
-    Comprueba que cada solución analítica (a) cumpla la condición inicial y
-    (b) satisfaga la ED: se compara la derivada (diferencia central) de la
-    solución exacta con f(t, y_exacta).
-    """
+    """Revisa que las soluciones exactas cumplan la condición inicial y la ED."""
     print("=" * 70)
     print("VERIFICACIÓN DE LAS SOLUCIONES ANALÍTICAS")
     print("=" * 70)
@@ -75,6 +75,7 @@ def verificar_analiticas():
     for p in (eq.MOTOR, eq.ELEVADOR, eq.MOTOR_DC):
         t = np.linspace(p["t0"] + 1e-3, p["tf"] - 1e-3, 400)
         y = p["exacta"](t)
+        # derivada de la exacta (diferencia central) contra f(t, y)
         dy = (p["exacta"](t + delta) - p["exacta"](t - delta)) / (2 * delta)
         fy = np.array([p["f"](tk, yk) for tk, yk in zip(t, y)])
         residuo = np.max(np.abs(dy - fy))
@@ -84,7 +85,7 @@ def verificar_analiticas():
     print()
 
 
-# Problemas con solución analítica
+# (problema, valores de h, h para la figura, título de la tabla)
 PRUEBAS = [
     (eq.MOTOR, [10, 5, 2.5, 1, 0.5, 0.1], 10,
      "Calentamiento del motor: error máximo respecto de la solución analítica."),
@@ -113,7 +114,7 @@ def probar_con_solucion_analitica(problema, hs, h_grueso, titulo):
     escribir_tabla(f"tabla_{nombre}", titulo, f"tab:{nombre}",
                    hs, errs, ordenes)
 
-    # Figura 1: solución numérica vs. analítica (paso grueso) 
+    # figura con un h grande, para que se vean los puntos de cada método
     n_comp = len(problema["y0"])
     t_fino = np.linspace(problema["t0"], problema["tf"], 800)
     y_fino = problema["exacta"](t_fino)
@@ -134,33 +135,18 @@ def probar_con_solucion_analitica(problema, hs, h_grueso, titulo):
     fig.savefig(f"figs/sol_{nombre}.pdf")
     plt.close(fig)
 
-    # Figura 2: error vs. h (log-log) 
-    fig, ax = plt.subplots(figsize=(5.5, 4))
-    for m in METODOS:
-        ax.loglog(hs, errs[m], "o-", color=COLORES[m],
-                  label=f"{m} (pendiente ≈ {ordenes[m]:.2f})")
-    ax.set_xlabel("h")
-    ax.set_ylabel("Error absoluto máximo")
-    ax.grid(alpha=0.3, which="both")
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(f"figs/error_{nombre}.pdf")
-    plt.close(fig)
 
-
-# ---------------------------------------------------------------------------
-# 3. Sistema no lineal: Lotka-Volterra (sin solución analítica)
-# ---------------------------------------------------------------------------
 def probar_lotka_volterra():
     p = eq.LOTKA_VOLTERRA
     hs = [0.2, 0.1, 0.05, 0.025, 0.0125]
     h_ref = 0.0005
+    h_fig = 0.1
     print("=" * 70)
     print(f"PROBLEMA NO LINEAL: Lotka-Volterra   intervalo "
           f"[{p['t0']}, {p['tf']}]")
     print("=" * 70)
 
-    # Solución de referencia: RK3 con paso muy fino
+    # referencia: RK3 con un h muy chico (sigue siendo numérica, no exacta)
     t_ref, y_ref = resolver(p, "RK3", h_ref)
     H0 = eq.H_lv(np.array([p["y0"]]))[0]
 
@@ -170,12 +156,12 @@ def probar_lotka_volterra():
         for h in hs:
             t1, y1 = resolver(p, m, h)
             t2, y2 = resolver(p, m, h / 2)
-            # (a) diferencia entre h y h/2 en los nodos comunes
+            # h contra h/2, en los tiempos que tienen en común
             dif_h[m].append(np.max(np.abs(y1 - y2[::2])))
-            # (c) diferencia contra la referencia (nodos comunes)
+            # contra la referencia: cada nodo de h cae cada `paso` nodos de ella
             paso = int(round(h / h_ref))
             dif_ref[m].append(np.max(np.abs(y1 - y_ref[::paso])))
-            # (b) desviación máxima de H
+            # cuánto se aleja H de su valor inicial
             deriva_H[m].append(np.max(np.abs(eq.H_lv(y1) - H0)))
 
     o_h = {m: orden_observado(hs, dif_h[m]) for m in METODOS}
@@ -195,7 +181,6 @@ def probar_lotka_volterra():
     print(f"  vs. referencia  : {o_ref['Heun']:.2f}, {o_ref['RK3']:.2f}")
     print(f"  deriva de H     : {o_H['Heun']:.2f}, {o_H['RK3']:.2f}\n")
 
-    # --- Tabla LaTeX ------------------------------------------------------
     filas = "\n".join(
         f"{h:g} & {fmt_tex(dif_ref['Heun'][k])} & {fmt_tex(dif_ref['RK3'][k])}"
         f" & {fmt_tex(deriva_H['Heun'][k])} & {fmt_tex(deriva_H['RK3'][k])}"
@@ -220,31 +205,13 @@ def probar_lotka_volterra():
     with open("tablas/tabla_lotka_volterra.tex", "w", encoding="utf-8") as fh:
         fh.write(texto)
 
-    # --- Figura: x(t), y(t) con h = 0.1 contra la referencia ---------------
-    h_g = 0.1
-    fig, ejes = plt.subplots(1, 2, figsize=(11, 4))
-    for j in range(2):
-        ejes[j].plot(t_ref, y_ref[:, j], "k-", lw=1.8,
-                     label="Referencia (RK3, h=0.0005)")
-        for m in METODOS:
-            t, y = resolver(p, m, h_g)
-            ejes[j].plot(t, y[:, j], "--", color=COLORES[m],
-                         label=f"{m} (h={h_g})")
-        ejes[j].set_xlabel("t")
-        ejes[j].set_ylabel(p["etiquetas"][j])
-        ejes[j].grid(alpha=0.3)
-        ejes[j].legend()
-    fig.tight_layout()
-    fig.savefig("figs/sol_lotka_volterra.pdf")
-    plt.close(fig)
-
-    # --- Figura: plano de fase ----------------------------------------------
+    # plano de fase
     fig, ax = plt.subplots(figsize=(5.5, 5))
     ax.plot(y_ref[:, 0], y_ref[:, 1], "k-", lw=1.8, label="Referencia")
     for m in METODOS:
-        t, y = resolver(p, m, h_g)
+        t, y = resolver(p, m, h_fig)
         ax.plot(y[:, 0], y[:, 1], "--", color=COLORES[m],
-                label=f"{m} (h={h_g})")
+                label=f"{m} (h={h_fig})")
     ax.plot(*p["y0"], "ko", label="Condición inicial")
     ax.set_xlabel("x (presas)")
     ax.set_ylabel("y (depredadores)")
@@ -254,21 +221,7 @@ def probar_lotka_volterra():
     fig.savefig("figs/fase_lotka_volterra.pdf")
     plt.close(fig)
 
-    # --- Figura: H(t) para h = 0.1 -------------------------------------------
-    fig, ax = plt.subplots(figsize=(6, 4))
-    for m in METODOS:
-        t, y = resolver(p, m, h_g)
-        ax.plot(t, eq.H_lv(y) - H0, color=COLORES[m], label=f"{m} (h={h_g})")
-    ax.axhline(0, color="k", lw=0.8)
-    ax.set_xlabel("t")
-    ax.set_ylabel("H(t) - H(0)")
-    ax.grid(alpha=0.3)
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig("figs/H_lotka_volterra.pdf")
-    plt.close(fig)
-
-    # --- Figura: convergencia (log-log) --------------------------------------
+    # convergencia: contra la referencia (izquierda) y desviación de H (derecha)
     fig, ejes = plt.subplots(1, 2, figsize=(11, 4))
     for m in METODOS:
         ejes[0].loglog(hs, dif_ref[m], "o-", color=COLORES[m],
@@ -280,13 +233,15 @@ def probar_lotka_volterra():
     for ax in ejes:
         ax.set_xlabel("h")
         ax.grid(alpha=0.3, which="both")
+        ax.set_xticks(hs)
+        ax.set_xticklabels([f"{h:g}" for h in hs])
+        ax.xaxis.set_minor_formatter(NullFormatter())
         ax.legend()
     fig.tight_layout()
     fig.savefig("figs/convergencia_lotka_volterra.pdf")
     plt.close(fig)
 
 
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     verificar_analiticas()
     for prob, hs, h_g, tit in PRUEBAS:
