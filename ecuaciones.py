@@ -1,27 +1,9 @@
-"""
-ecuaciones.py
-=============
-Definición de los problemas de valor inicial del proyecto y de sus soluciones
-analíticas (las deducidas a mano en el informe).
-
-Cada problema se describe con un diccionario con las llaves:
-    nombre    : nombre corto (se usa en archivos y gráficas)
-    f         : función f(t, y) -> y'   (forma de sistema de primer orden)
-    t0, tf    : intervalo
-    y0        : condición inicial (arreglo)
-    exacta    : función exacta(t) -> arreglo (len(t), m) con la solución
-                analítica (None si no existe)
-    etiquetas : nombre de cada componente de y, para las gráficas
-"""
-
 import numpy as np
 
 
-# ---------------------------------------------------------------------------
 # 1. ED de primer orden: calentamiento de un motor
 #    100 T' + 2 (T - 25) = 20,   T(0) = 25,   0 <= t <= 200 s
 #    Solución: T(t) = 35 - 10 e^{-t/50}
-# ---------------------------------------------------------------------------
 def _f_motor(t, y):
     T = y[0]
     return np.array([(20.0 - 2.0 * (T - 25.0)) / 100.0])
@@ -43,12 +25,9 @@ MOTOR = dict(
 )
 
 
-# ---------------------------------------------------------------------------
 # 2. ED de segundo orden: elevador
 #    m x'' + c x' = F_m - m g,   x(0) = 0,  x'(0) = 0,   0 <= t <= 10 s
-#    Se reduce con v = x':   x' = v,   v' = (F_m - m g - c v) / m
 #    Solución: v(t) = 5 (1 - e^{-t/5}),   x(t) = 5 t + 25 e^{-t/5} - 25
-# ---------------------------------------------------------------------------
 M_ELEV, C_ELEV, FM_ELEV, G = 500.0, 100.0, 5405.0, 9.81
 
 
@@ -75,14 +54,12 @@ ELEVADOR = dict(
 )
 
 
-# ---------------------------------------------------------------------------
 # 3. Sistema lineal 2x2: motor DC
 #    i' = 24 - 2 i - 0.02 w,    w' = i - 10 w,    i(0) = w(0) = 0,
 #    0 <= t <= 10 s.
 #    Solución (por eliminación):  w'' + 12 w' + 20.02 w = 24
 #      m1,2 = -6 +- s,  s = sqrt(15.98),   w_p = 24/20.02
 #      w = w_p + C1 e^{m1 t} + C2 e^{m2 t},   i = w' + 10 w
-# ---------------------------------------------------------------------------
 def _f_motor_dc(t, y):
     i, w = y
     return np.array([24.0 - 2.0 * i - 0.02 * w, i - 10.0 * w])
@@ -112,11 +89,10 @@ MOTOR_DC = dict(
 )
 
 
-# ---------------------------------------------------------------------------
 # 4. Sistema NO lineal 2x2: Lotka-Volterra (sin solución analítica)
 #    x' = a x - b x y,    y' = d x y - c y,    x(0) = 10,  y(0) = 5
 #    Cantidad conservada:  H(x, y) = d x - c ln x + b y - a ln y
-# ---------------------------------------------------------------------------
+
 A_LV, B_LV, C_LV, D_LV = 1.1, 0.4, 0.4, 0.1
 
 
