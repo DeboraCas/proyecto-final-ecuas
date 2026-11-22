@@ -1,31 +1,7 @@
-"""
-main.py
-=======
-Script principal del proyecto. Ejecuta todas las pruebas:
-
-  1. Verifica que las soluciones analíticas cumplan la ED y las condiciones
-     iniciales (residuo numérico).
-  2. Para los tres problemas con solución analítica (motor, elevador,
-     motor DC) calcula el error de Heun y RK3 para varios tamaños de paso h,
-     estima el orden de convergencia y genera tablas (.tex) y figuras (.pdf).
-  3. Para el sistema no lineal (Lotka-Volterra), que no tiene solución
-     analítica, estudia la convergencia con:
-        a) la diferencia entre soluciones con pasos h y h/2,
-        b) la desviación de la cantidad conservada H respecto de H(0),
-        c) la comparación con una solución de referencia de paso muy fino.
-
-Uso:   python main.py
-Salida: carpeta figs/ (gráficas en PDF) y tablas/ (tablas en LaTeX).
-
-Definición del error en los problemas con solución analítica:
-    E(h) = max_{k, j} | y_num[k, j] - y_exacta(t_k)[j] |
-es decir, el error absoluto máximo sobre todos los nodos y componentes.
-"""
-
 import os
 
 import matplotlib
-matplotlib.use("Agg")                       # sin ventanas: solo guarda archivos
+matplotlib.use("Agg")                   
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -35,16 +11,11 @@ from metodos import heun, rk3
 METODOS = {"Heun": heun, "RK3": rk3}
 COLORES = {"Heun": "tab:orange", "RK3": "tab:green"}
 
-# Trabajar siempre en la carpeta donde está este archivo, para que figs/ y
-# tablas/ se creen junto a main.py sin importar desde dónde se ejecute.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs("figs", exist_ok=True)
 os.makedirs("tablas", exist_ok=True)
 
 
-# ---------------------------------------------------------------------------
-# Utilidades
-# ---------------------------------------------------------------------------
 def fmt_tex(x):
     """Formatea un número en notación científica para LaTeX."""
     if x == 0:
@@ -89,9 +60,8 @@ def escribir_tabla(nombre, titulo, etiqueta, hs, errs, ordenes):
         fh.write(texto)
 
 
-# ---------------------------------------------------------------------------
-# 1. Verificación de las soluciones analíticas
-# ---------------------------------------------------------------------------
+# Verificación de las soluciones analíticas
+
 def verificar_analiticas():
     """
     Comprueba que cada solución analítica (a) cumpla la condición inicial y
@@ -114,11 +84,8 @@ def verificar_analiticas():
     print()
 
 
-# ---------------------------------------------------------------------------
-# 2. Problemas con solución analítica
-# ---------------------------------------------------------------------------
+# Problemas con solución analítica
 PRUEBAS = [
-    # (problema, lista de h, h "grueso" para la gráfica, título para la tabla)
     (eq.MOTOR, [10, 5, 2.5, 1, 0.5, 0.1], 10,
      "Calentamiento del motor: error máximo respecto de la solución analítica."),
     (eq.ELEVADOR, [1, 0.5, 0.25, 0.1, 0.05, 0.01], 1,
@@ -146,7 +113,7 @@ def probar_con_solucion_analitica(problema, hs, h_grueso, titulo):
     escribir_tabla(f"tabla_{nombre}", titulo, f"tab:{nombre}",
                    hs, errs, ordenes)
 
-    # --- Figura 1: solución numérica vs. analítica (paso grueso) ----------
+    # Figura 1: solución numérica vs. analítica (paso grueso) 
     n_comp = len(problema["y0"])
     t_fino = np.linspace(problema["t0"], problema["tf"], 800)
     y_fino = problema["exacta"](t_fino)
@@ -167,7 +134,7 @@ def probar_con_solucion_analitica(problema, hs, h_grueso, titulo):
     fig.savefig(f"figs/sol_{nombre}.pdf")
     plt.close(fig)
 
-    # --- Figura 2: error vs. h (log-log) ----------------------------------
+    # Figura 2: error vs. h (log-log) 
     fig, ax = plt.subplots(figsize=(5.5, 4))
     for m in METODOS:
         ax.loglog(hs, errs[m], "o-", color=COLORES[m],
